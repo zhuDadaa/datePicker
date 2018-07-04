@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.js"></script>
+    <style>
+        /* 弹出的最外层 */
+
+        #dateDiv {
+            width: 400px;
+            display: none;
+            box-shadow: 0 2px 12px 0 rgba(0, 0, 0, .1);
+            margin-top: 5px;
+            padding-top: 10px;
+            padding-bottom: 5px;
+        }
+
+        #date {
+            height: 30px;
+            width: 400px;
+            text-align: left;
+            border-radius: 5px;
+            border: 1px solid #c8cccf;
+            outline: 0;
+            padding-left: 15px;
+            box-sizing: border-box;
+
+        }
+
+        .date {
+            width: 400px;
+        }
+
+        /* 选择 */
+
+        .dateSelect {
+            width: 410px;
+            margin: 10px 20px;
+        }
+
+        .dateSelect span:not(:nth-child(3)):hover {
+            cursor: pointer;
+            color: #409eff;
+        }
+
+        .dateSelect span:nth-child(3) {
+            padding: 0 78px;
+        }
+
+        .dateSelect span:nth-child(2) {
+            padding-left: 20px;
+        }
+
+        .dateSelect span:nth-child(4) {
+            padding-right: 20px;
+        }
+
+        /* 日 */
+
+        .dateDay {
+            width: 400px;
+            border-collapse: collapse;
+        }
+
+        .dateDay tr td {
+            text-align: center;
+
+        }
+
+        .dateDay tr:first-child {
+            border-bottom: 1px solid #e4e7ed
+        }
+
+        .dateDay tr td {
+            padding: 10px;
+        }
+
+        .dateDay tr:not(:first-child) td:hover {
+            cursor: pointer;
+            color: #409eff;
+        }
+
+        .gloomColor {
+            color: #c0c4cc;
+        }
+
+        .lightColor {
+            color: #409eff;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- 弹出框 -->
+    <div class="date">
+        <input id="date" type="text" placeholder="点击选择日期">
+        <!-- 进退以及显示选中日期 -->
+        <div id="dateDiv">
+            <div class="dateSelect">
+                <span id='lastYear'>&lt;&lt;</span>
+                <span id='lastMonth'>&lt;</span>
+                <span></span>
+                <span id='nextMonth'>&gt;</span>
+                <span id='nextYear'>&gt;&gt;</span>
+            </div>
+            <table class="dateDay"></table>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            var closeDateDiv = true; //默认值，框是消失的
+            $('#date').focus(function () {
+                $('#dateDiv').css('display', 'block');
+            })
+            $('#date').blur(function () {
+                if (closeDateDiv === true) {
+                    $('#dateDiv').css('display', 'none');
+                } else {
+                    $('#date').focus(); //打开验证
+                    closeDateDiv = true; //刷新验证条件
+                }
+            })
+            //初始化日期—今天
+            var nowDate = new Date;
+            // 年
+            var year = nowDate.getFullYear();
+            // 月
+            var month = nowDate.getMonth() + 1;
+            // 日
+            var day = nowDate.getDate();
+            //固定当前年、月、日
+            var constYear = year;
+            var constMonth = month;
+            var constDay = day;
+            // 星期
+            var week = new Date(year + '-' + month + '-' + 1).getDay();
+            // 当月总天数
+            var nowDays;
+            //上一月总天数
+            var lastDays;
+            //下一月总天数
+            var nextDays;
+            // 上一月
+            var lastMonth;
+            // 下一月
+            var nextMonth;
+
+            // 刷新日期
+            function refreshDate() {
+                var nowDate = year + '年' + month + '月';
+                $('.dateSelect span:nth-child(3)').html(nowDate); //这样写的问题是，将来html结构变化，会出错
+            }
+            //返回某月总天数
+            function monthDays(year, month) {
+                if (month === 1 || month === 3 || month === 5 || month === 7 || month === 8 ||
+                    month === 10 || month === 12) {
+                    return 31;
+                } else if (month === 4 || month === 6 || month === 9 || month === 11) {
+                    return 30;
+                } else if (month === 2) {
+                    if ((year % 4 === 0 && year % 100 !== 0) || year % 400 === 0) {
+                        return 29;
+                    } else {
+                        return 28;
+                    }
+                }
+            }
+            // 将日压入列表中
+            function dateHtml() {
+                refreshDate();
+
+                if (month === 1) {
+                    lastMonth = 12;
+                } else {
+                    lastMonth = month - 1;
+                }
+
+                // 上月有多少天
+                lastDays = monthDays(year, lastMonth);
+                nowDays = monthDays(year, month);
+
+                //日的html
+                var dayHtml = '<tr><td>日</td><td>一</td><td>二</td><td>三</td><td>四</td><td>五</td><td>六</td></tr>';
+                // 如果上个月的最后一天是周六，那就要占7天！
+                if (new Date(year + '-' + lastMonth + '-' + lastDays).getDay() === 6) {
+                    week = 7;
+                } else {
+                    week = new Date(year + '-' + month + '-' + 1).getDay();
+                }
+                var dateArr = [];
+                for (var i_last = lastDays - week + 1; i_last < lastDays + 1; i_last++) {
+                    dateArr.push({
+                        html: i_last,
+                        color: 0
+                    });
+                }
+
+                if (year === constYear && month === constMonth) {
+                    var right = true;
+                }
+                for (var i_now = 1; i_now < nowDays + 1; i_now++) {
+                    dateArr.push({
+                        html: i_now,
+                        color: i_now === day && right ? 1 : ''
+                    });
+                }
+
+                for (var i_next = 1; i_next < 42 - (week + nowDays) + 1; i_next++) {
+                    dateArr.push({
+                        html: i_next,
+                        color: 2
+                    });
+                }
+
+                for (var i_date = 0; i_date < dateArr.length; i_date++) {
+                    if (i_date === 0 || i_date === 7 || i_date === 14 || i_date === 21 || i_date === 28 ||
+                        i_date === 35) {
+                        dayHtml += "<tr>" + "<td " + "data-type=" + dateArr[i_date].color + ">" + dateArr[
+                            i_date].html + "</td>";
+                    } else if (i_date === 6 || i_date === 13 || i_date === 20 || i_date === 27 || i_date === 34 ||
+                        i_date === 41) {
+                        dayHtml += "<td " + "data-type=" + dateArr[i_date].color + ">" + dateArr[i_date].html +
+                            "</td></tr>";
+                    } else {
+                        dayHtml += "<td " + "data-type=" + dateArr[i_date].color + ">" + dateArr[i_date].html +
+                            "</td>";
+                    }
+                }
+                //挂载DOM，找出相应的元素加上对应的样式
+                $('.dateDay').html(dayHtml);
+                $(".dateDay [data-type='0'],.dateDay [data-type='2']").addClass('gloomColor');
+                $(".dateDay [data-type='1']").addClass('lightColor');
+
+
+            }
+            // 冒泡绑定点击事件
+            //mousedown与click有区别
+            $(".dateDay").mousedown(function (e) {
+                if (Number(e.target.innerText)) {
+                    closeDateDiv = true;
+                    if (e.target.attributes[0].nodeValue === "0") {
+                        if (month === 1) {
+                            $('#date').val((year - 1) + '年' + 12 + '月' + e.target.innerText + '日');
+                        } else {
+                            $('#date').val(year + '年' + (month - 1) + '月' + e.target.innerText + '日');
+                        }
+                    } else if (e.target.attributes[0].nodeValue === "2") {
+                        if (month === 12) {
+                            $('#date').val((year + 1) + '年' + 1 + '月' + e.target.innerText + '日');
+                        } else {
+                            $('#date').val(year + '年' + (month + 1) + '月' + e.target.innerText + '日');
+                        }
+                    } else if (e.target.attributes[0].nodeValue === "1" || e.target.attributes[0].nodeValue ===
+                        "") {
+                        $('#date').val(year + '年' + month + '月' + e.target.innerText + '日');
+                    }
+                    $(".dateDay tr td").removeClass('lightColor');
+                    $(e.target).addClass('lightColor');
+                } else {
+                    closeDateDiv = false;
+                }
+            });
+
+            dateHtml();
+
+            // 点击切换年、月
+            $('#lastYear').mousedown(function () {
+                year -= 1;
+                dateHtml();
+            });
+
+            $('#nextYear').mousedown(function () {
+                year += 1;
+                dateHtml();
+            });
+
+            $('#lastMonth').mousedown(function () {
+                if (month === 1) {
+                    year -= 1;
+                    month = 12;
+                } else {
+                    month -= 1;
+                }
+                dateHtml();
+            });
+            $('#nextMonth').mousedown(function () {
+                if (month === 12) {
+                    year += 1;
+                    month = 1;
+                } else {
+                    month += 1;
+                }
+                dateHtml();
+            });
+            $('.dateSelect').mousedown(function(){
+                closeDateDiv = false;
+                console.log(1);
+            });
+        })
+    </script>
+</body>
+
+</html>
